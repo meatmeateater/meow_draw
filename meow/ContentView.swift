@@ -11,7 +11,7 @@ struct ContentView: View {
             .onAppear {
                 loadHistory()
             }
-            .onChange(of: history) { _ in
+            .onChange(of: history) {
                 saveHistory()
             }
     }
