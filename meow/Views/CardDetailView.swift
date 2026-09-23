@@ -2,6 +2,8 @@ import SwiftUI
 
 #if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
 #endif
 
 // MARK: - 籤卡詳情檢視頁
@@ -18,6 +20,7 @@ struct CardDetailView: View {
     @State private var showDeleteConfirmation = false
     @State private var isImageLoading = false
     @State private var isImageLoadFailed = false
+    @State private var isRenderFailed = false
     @State private var imageLoadTask: Task<Void, Never>? = nil
     
     var body: some View {
@@ -25,14 +28,25 @@ struct CardDetailView: View {
             VStack(spacing: 24) {
                 // 正面拍立得卡片展示
                 #if canImport(UIKit)
-                FortuneCardFrontView(card: card, preloadedImage: cardImage, onToggleFavorite: {
-                    onToggleFavorite()
-                })
+                FortuneCardFrontView(
+                    card: card,
+                    preloadedImage: cardImage,
+                    allowsNetworkLoading: false,
+                    isFailed: isImageLoadFailed,
+                    onToggleFavorite: {
+                        onToggleFavorite()
+                    }
+                )
                 .padding(.top, 16)
                 #else
-                FortuneCardFrontView(card: card, onToggleFavorite: {
-                    onToggleFavorite()
-                })
+                FortuneCardFrontView(
+                    card: card,
+                    allowsNetworkLoading: false,
+                    isFailed: isImageLoadFailed,
+                    onToggleFavorite: {
+                        onToggleFavorite()
+                    }
+                )
                 .padding(.top, 16)
                 #endif
                 
@@ -96,6 +110,28 @@ struct CardDetailView: View {
                                 Image(systemName: "arrow.clockwise")
                                     .font(.system(size: 15, weight: .bold))
                                 Text("圖片載入失敗・點擊重試")
+                                    .font(.huninn(size: 15))
+                            }
+                            .foregroundColor(.catCaramel)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                            .background(Color.catCardBackground)
+                            .clipShape(Capsule())
+                            .overlay(
+                                Capsule()
+                                    .strokeBorder(Color.catCaramel.opacity(0.6), lineWidth: 1.5)
+                            )
+                            .shadow(color: Color.catCaramel.opacity(0.15), radius: 6, x: 0, y: 3)
+                        }
+                        .buttonStyle(.plain)
+                    } else if isRenderFailed {
+                        Button {
+                            retryRenderImage()
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "arrow.clockwise")
+                                    .font(.system(size: 15, weight: .bold))
+                                Text("分享圖片產生失敗・點擊重試")
                                     .font(.huninn(size: 15))
                             }
                             .foregroundColor(.catCaramel)
@@ -177,6 +213,10 @@ struct CardDetailView: View {
     private func loadImage() async {
         isImageLoading = true
         isImageLoadFailed = false
+        defer {
+            isImageLoading = false
+        }
+        
         #if canImport(UIKit)
         if let (image, fileName) = await FortuneImageManager.shared.getOrDownloadImage(for: card) {
             guard !Task.isCancelled else { return }
@@ -184,17 +224,14 @@ struct CardDetailView: View {
             if card.localImageFileName == nil {
                 card.localImageFileName = fileName
             }
-            self.isImageLoading = false
             self.isImageLoadFailed = false
             self.renderCardImage()
         } else {
             guard !Task.isCancelled else { return }
-            self.isImageLoading = false
             self.isImageLoadFailed = true
         }
         #else
         guard !Task.isCancelled else { return }
-        self.isImageLoading = false
         self.isImageLoadFailed = true
         #endif
     }
@@ -208,21 +245,50 @@ struct CardDetailView: View {
         }
     }
     
+    private func retryRenderImage() {
+        HapticManager.light()
+        renderCardImage()
+    }
+    
     @MainActor
     private func renderCardImage() {
         #if canImport(UIKit)
-        // 只有拿到真正的 UIImage 才允許產生分享圖片
         guard let cardImage = cardImage else { return }
-        let exportView = FortuneCardFrontView(card: card, preloadedImage: cardImage, onToggleFavorite: nil)
-            .frame(width: 330, height: 520)
+        isRenderFailed = false
+        let exportView = FortuneCardFrontView(
+            card: card,
+            preloadedImage: cardImage,
+            allowsNetworkLoading: false,
+            onToggleFavorite: nil
+        )
+        .frame(width: 330, height: 520)
+        
         let renderer = ImageRenderer(content: exportView)
         renderer.scale = 3.0
         if let uiImage = renderer.uiImage {
             self.renderedShareImage = Image(uiImage: uiImage)
+            self.isRenderFailed = false
+        } else {
+            self.renderedShareImage = nil
+            self.isRenderFailed = true
         }
         #elseif canImport(AppKit)
+        isRenderFailed = false
+        let exportView = FortuneCardFrontView(
+            card: card,
+            allowsNetworkLoading: false,
+            onToggleFavorite: nil
+        )
+        .frame(width: 330, height: 520)
+        
+        let renderer = ImageRenderer(content: exportView)
+        renderer.scale = 3.0
         if let nsImage = renderer.nsImage {
             self.renderedShareImage = Image(nsImage: nsImage)
+            self.isRenderFailed = false
+        } else {
+            self.renderedShareImage = nil
+            self.isRenderFailed = true
         }
         #endif
     }

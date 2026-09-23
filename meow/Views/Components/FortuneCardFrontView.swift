@@ -2,6 +2,8 @@ import SwiftUI
 
 #if canImport(UIKit)
 import UIKit
+#elseif canImport(AppKit)
+import AppKit
 #endif
 
 // MARK: - 拍立得照片卡風格正面
@@ -10,6 +12,8 @@ struct FortuneCardFrontView: View {
     #if canImport(UIKit)
     var preloadedImage: UIImage? = nil
     #endif
+    var allowsNetworkLoading: Bool = true
+    var isFailed: Bool = false
     var onToggleFavorite: (() -> Void)? = nil
     
     var body: some View {
@@ -188,7 +192,7 @@ struct FortuneCardFrontView: View {
         .shadow(color: Color.catCaramel.opacity(0.06), radius: 4, x: 0, y: 2)
     }
     
-    // MARK: - 貓咪照片顯示視圖（依序檢查預載圖、本機儲存檔、最後使用網路載入）
+    // MARK: - 貓咪照片顯示視圖（依序檢查預載圖、本機儲存檔、最後使用網路載入或佔位）
     @ViewBuilder
     private var catPhotoView: some View {
         #if canImport(UIKit)
@@ -205,28 +209,56 @@ struct FortuneCardFrontView: View {
                 .scaledToFill()
                 .frame(width: 298, height: 210)
                 .clipped()
-        } else {
+        } else if allowsNetworkLoading {
             networkAsyncImage
+        } else if isFailed {
+            failurePlaceholderView
+        } else {
+            loadingPlaceholderView
         }
         #else
-        networkAsyncImage
+        if allowsNetworkLoading {
+            networkAsyncImage
+        } else if isFailed {
+            failurePlaceholderView
+        } else {
+            loadingPlaceholderView
+        }
         #endif
+    }
+    
+    private var loadingPlaceholderView: some View {
+        ZStack {
+            Color(hex: "F6EFE6")
+            VStack(spacing: 8) {
+                ProgressView()
+                    .tint(.catCaramel)
+                Text("喵咪照片下載中...")
+                    .font(.huninn(size: 11))
+                    .foregroundColor(.catSecondaryBrown)
+            }
+        }
+    }
+    
+    private var failurePlaceholderView: some View {
+        ZStack {
+            Color(hex: "F5ECE1")
+            VStack(spacing: 8) {
+                Image(systemName: "cat.circle.fill")
+                    .font(.system(size: 44))
+                    .foregroundColor(.catCaramel.opacity(0.8))
+                Text("喵星訊號接收中 🐾")
+                    .font(.huninn(size: 12))
+                    .foregroundColor(.catSecondaryBrown)
+            }
+        }
     }
     
     private var networkAsyncImage: some View {
         AsyncImage(url: URL(string: card.imageURLString)) { phase in
             switch phase {
             case .empty:
-                ZStack {
-                    Color(hex: "F6EFE6")
-                    VStack(spacing: 8) {
-                        ProgressView()
-                            .tint(.catCaramel)
-                        Text("喵咪照片下載中...")
-                            .font(.huninn(size: 11))
-                            .foregroundColor(.catSecondaryBrown)
-                    }
-                }
+                loadingPlaceholderView
             case .success(let image):
                 image
                     .resizable()
@@ -234,17 +266,7 @@ struct FortuneCardFrontView: View {
                     .frame(width: 298, height: 210)
                     .clipped()
             case .failure:
-                ZStack {
-                    Color(hex: "F5ECE1")
-                    VStack(spacing: 8) {
-                        Image(systemName: "cat.circle.fill")
-                            .font(.system(size: 44))
-                            .foregroundColor(.catCaramel.opacity(0.8))
-                        Text("喵星訊號接收中 🐾")
-                            .font(.huninn(size: 12))
-                            .foregroundColor(.catSecondaryBrown)
-                    }
-                }
+                failurePlaceholderView
             @unknown default:
                 Color(hex: "F5ECE1")
             }
