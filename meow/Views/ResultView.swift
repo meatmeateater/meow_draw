@@ -16,6 +16,7 @@ struct ResultView: View {
     #if canImport(UIKit)
     @State private var cardImage: UIImage? = nil
     #endif
+    @State private var imageLoadTask: Task<Void, Never>? = nil
     
     init(initialCategory: FortuneCategory, history: Binding<[FortuneCard]>) {
         self.initialCategory = initialCategory
@@ -97,21 +98,28 @@ struct ResultView: View {
                                 .shadow(color: Color.catCaramel.opacity(0.35), radius: 8, x: 0, y: 4)
                             }
                         } else {
-                            ShareLink(
-                                item: "【喵運籤】今日我的運勢是：\(currentCard.rarity.title) - \(currentCard.title)！\n\(currentCard.advice)\n幸運色：\(currentCard.luckyColor) 🐾"
-                            ) {
+                            Button {
+                                // 圖片渲染中，按鈕暫時停用
+                            } label: {
                                 HStack(spacing: 8) {
-                                    Image(systemName: "square.and.arrow.up")
-                                        .font(.system(size: 16, weight: .bold))
-                                    Text("分享今日運勢卡")
+                                    ProgressView()
+                                        .scaleEffect(0.85)
+                                        .tint(.catSecondaryBrown)
+                                    Text("分享圖片準備中…")
                                         .font(.huninn(size: 16))
                                 }
-                                .foregroundColor(.white)
+                                .foregroundColor(.catSecondaryBrown)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 52)
-                                .background(Color.catCaramel)
+                                .background(Color.catCardBackground)
                                 .clipShape(Capsule())
+                                .overlay(
+                                    Capsule()
+                                        .strokeBorder(Color.catCardBorder, lineWidth: 1)
+                                )
                             }
+                            .disabled(true)
+                            .buttonStyle(.plain)
                         }
                         
                         // 2. 再抽一張喵籤按鈕
@@ -154,8 +162,9 @@ struct ResultView: View {
             appendCurrentCardToHistory()
             
             // 同步啟動貓咪圖片載入與本機快取
-            Task {
-                await loadCardImage()
+            let targetCard = currentCard
+            imageLoadTask = Task {
+                await loadCardImage(for: targetCard)
             }
             
             // 進入頁面延遲 0.35 秒自動翻牌
@@ -165,21 +174,29 @@ struct ResultView: View {
             }
             HapticManager.success()
         }
+        .onDisappear {
+            imageLoadTask?.cancel()
+        }
     }
     
     // MARK: - 圖片載入邏輯
     @MainActor
-    private func loadCardImage() async {
+    private func loadCardImage(for targetCard: FortuneCard) async {
+        let targetId = targetCard.id
         #if canImport(UIKit)
-        if let (image, fileName) = await FortuneImageManager.shared.getOrDownloadImage(for: currentCard) {
+        if let (image, fileName) = await FortuneImageManager.shared.getOrDownloadImage(for: targetCard) {
+            // 下載完成後先確認目前卡片仍是同一張，避免連續抽籤時覆蓋新卡片的資料
+            guard !Task.isCancelled, currentCard.id == targetId else { return }
             self.cardImage = image
             self.currentCard.localImageFileName = fileName
             self.updateCurrentCardInHistory()
             self.renderCardImage()
         } else {
+            guard !Task.isCancelled, currentCard.id == targetId else { return }
             self.renderCardImage()
         }
         #else
+        guard !Task.isCancelled, currentCard.id == targetId else { return }
         self.renderCardImage()
         #endif
     }
@@ -208,9 +225,10 @@ struct ResultView: View {
             renderedShareImage = nil
             appendCurrentCardToHistory()
             
-            // 啟動圖片下載與快取
-            Task {
-                await loadCardImage()
+            // 啟動圖片下載與快取（取消前一次未完成的載入任務）
+            imageLoadTask?.cancel()
+            imageLoadTask = Task {
+                await loadCardImage(for: newCard)
             }
             
             try? await Task.sleep(nanoseconds: 200_000_000)

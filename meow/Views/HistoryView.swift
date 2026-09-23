@@ -99,9 +99,11 @@ struct HistoryView: View {
                                         history[index].isFavorite.toggle()
                                     },
                                     onDelete: {
-                                        let item = history[index]
-                                        FortuneImageManager.shared.deleteImage(fileName: item.localImageFileName)
-                                        history.remove(at: index)
+                                        if let idx = history.firstIndex(where: { $0.id == card.id }) {
+                                            let item = history[idx]
+                                            FortuneImageManager.shared.deleteImage(fileName: item.localImageFileName)
+                                            history.remove(at: idx)
+                                        }
                                     }
                                 )
                             } label: {
@@ -177,7 +179,7 @@ struct HistoryView: View {
     // MARK: - 卡片列表單列視圖
     private func historyRow(card: FortuneCard, index: Int) -> some View {
         HStack(spacing: 12) {
-            // 縮圖：優先讀取本機快取照片，若無則降級使用 AsyncImage
+            // 縮圖：優先讀取本機快照照片，若無則降級使用 AsyncImage
             thumbnailView(for: card)
                 .frame(width: 60, height: 60)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -297,7 +299,7 @@ struct HistoryView: View {
             }
             
             VStack(spacing: 6) {
-                Text(showFavoritesOnly ? "尚無收藏的喵籤" : "尚無喵運紀錄")
+                Text(showFavoritesOnly ? "尚未收藏的喵籤" : "尚無喵運紀錄")
                     .font(.huninn(size: 17))
                     .foregroundColor(.catDarkBrown)
                 

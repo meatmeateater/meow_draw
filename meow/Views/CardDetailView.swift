@@ -86,22 +86,28 @@ struct CardDetailView: View {
                             .shadow(color: Color.catCaramel.opacity(0.3), radius: 8, x: 0, y: 4)
                         }
                     } else {
-                        // 備用文字分享
-                        ShareLink(
-                            item: "【喵運籤】我抽到了「\(card.rarity.title) - \(card.title)」！\n\(card.advice)\n幸運色：\(card.luckyColor) 🐾"
-                        ) {
+                        Button {
+                            // 圖片渲染中，按鈕暫時停用
+                        } label: {
                             HStack(spacing: 8) {
-                                Image(systemName: "square.and.arrow.up")
-                                    .font(.system(size: 16, weight: .bold))
-                                Text("分享這張喵運卡")
+                                ProgressView()
+                                    .scaleEffect(0.85)
+                                    .tint(.catSecondaryBrown)
+                                Text("分享圖片準備中…")
                                     .font(.huninn(size: 15))
                             }
-                            .foregroundColor(.white)
+                            .foregroundColor(.catSecondaryBrown)
                             .frame(maxWidth: .infinity)
                             .frame(height: 50)
-                            .background(Color.catCaramel)
+                            .background(Color.catCardBackground)
                             .clipShape(Capsule())
+                            .overlay(
+                                Capsule()
+                                    .strokeBorder(Color.catCardBorder, lineWidth: 1)
+                            )
                         }
+                        .disabled(true)
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, 32)
@@ -126,7 +132,6 @@ struct CardDetailView: View {
         .confirmationDialog("確定要刪除這張喵籤嗎？", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
             Button("刪除籤卡", role: .destructive) {
                 HapticManager.medium()
-                FortuneImageManager.shared.deleteImage(fileName: card.localImageFileName)
                 onDelete?()
                 dismiss()
             }
