@@ -19,7 +19,7 @@ struct FortuneCardFrontView: View {
                                 ProgressView()
                                     .tint(.catCaramel)
                                 Text("喵咪照片下載中...")
-                                    .font(.system(size: 11, weight: .medium))
+                                    .font(.huninn(size: 11))
                                     .foregroundColor(.catSecondaryBrown)
                             }
                         }
@@ -37,7 +37,7 @@ struct FortuneCardFrontView: View {
                                     .font(.system(size: 44))
                                     .foregroundColor(.catCaramel.opacity(0.8))
                                 Text("喵星訊號接收中 🐾")
-                                    .font(.system(size: 12, weight: .medium))
+                                    .font(.huninn(size: 12))
                                     .foregroundColor(.catSecondaryBrown)
                             }
                         }
@@ -76,7 +76,7 @@ struct FortuneCardFrontView: View {
                 HStack(spacing: 6) {
                     // 稀有度 Badge
                     Text(card.rarity.title)
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.huninn(size: 11))
                         .foregroundColor(card.rarity.badgeColor)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
@@ -92,7 +92,7 @@ struct FortuneCardFrontView: View {
                         Image(systemName: card.category.iconName)
                             .font(.system(size: 10, weight: .bold))
                         Text(card.category.title)
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.huninn(size: 11))
                     }
                     .foregroundColor(.catCaramel)
                     .padding(.horizontal, 8)
@@ -108,7 +108,7 @@ struct FortuneCardFrontView: View {
                             .fill(card.rarity.badgeColor)
                             .frame(width: 7, height: 7)
                         Text(card.luckyColor)
-                            .font(.system(size: 10, weight: .medium))
+                            .font(.huninn(size: 10))
                             .foregroundColor(.catSecondaryBrown)
                     }
                     .padding(.horizontal, 6)
@@ -120,7 +120,7 @@ struct FortuneCardFrontView: View {
                 
                 // 主標題
                 Text(card.title)
-                    .font(.system(size: 21, weight: .bold, design: .rounded))
+                    .font(.huninn(size: 21))
                     .foregroundColor(.catDarkBrown)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
@@ -145,14 +145,14 @@ struct FortuneCardFrontView: View {
                     if !advice.good.isEmpty {
                         HStack(alignment: .top, spacing: 6) {
                             Text("宜")
-                                .font(.system(size: 10, weight: .bold))
+                                .font(.huninn(size: 10))
                                 .foregroundColor(.catGoodGreen)
                                 .frame(width: 20, height: 20)
                                 .background(Color.catGoodBg)
                                 .clipShape(Circle())
                             
                             Text(advice.good)
-                                .font(.system(size: 12, weight: .regular))
+                                .font(.huninn(size: 12))
                                 .foregroundColor(.catDarkBrown)
                                 .lineSpacing(2)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -162,14 +162,14 @@ struct FortuneCardFrontView: View {
                     if !advice.bad.isEmpty {
                         HStack(alignment: .top, spacing: 6) {
                             Text("忌")
-                                .font(.system(size: 10, weight: .bold))
+                                .font(.huninn(size: 10))
                                 .foregroundColor(.catBadRed)
                                 .frame(width: 20, height: 20)
                                 .background(Color.catBadBg)
                                 .clipShape(Circle())
                             
                             Text(advice.bad)
-                                .font(.system(size: 12, weight: .regular))
+                                .font(.huninn(size: 12))
                                 .foregroundColor(.catDarkBrown)
                                 .lineSpacing(2)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -190,14 +190,14 @@ struct FortuneCardFrontView: View {
                             .font(.system(size: 9))
                             .foregroundColor(.catGold)
                         Text("喵神社認證")
-                            .font(.system(size: 9, weight: .semibold))
+                            .font(.huninn(size: 9))
                             .foregroundColor(.catSecondaryBrown)
                     }
                     
                     Spacer()
                     
                     Text("爪印為憑 · No.\(card.id.uuidString.prefix(6))")
-                        .font(.system(size: 9, weight: .regular, design: .monospaced))
+                        .font(.huninn(size: 9))
                         .foregroundColor(.catMutedBrown)
                 }
                 .padding(.bottom, 12)

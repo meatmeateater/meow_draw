@@ -27,11 +27,11 @@ struct ResultView: View {
                 // 提示文案
                 VStack(spacing: 4) {
                     Text(isFlipped ? "✦ 今日專屬喵運已揭曉 ✦" : "✦ 虔心祈願，喵神賜籤 ✦")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.huninn(size: 14))
                         .foregroundColor(.catCaramel)
                     
                     Text(isFlipped ? "點擊卡片可翻轉檢視背面" : "靜候揭籤，或點擊卡片翻開")
-                        .font(.system(size: 12, weight: .regular))
+                        .font(.huninn(size: 12))
                         .foregroundColor(.catSecondaryBrown)
                 }
                 .padding(.top, 8)
@@ -70,7 +70,7 @@ struct ResultView: View {
                                     Image(systemName: "square.and.arrow.up")
                                         .font(.system(size: 16, weight: .bold))
                                     Text("分享今日運勢卡")
-                                        .font(.system(size: 16, weight: .semibold))
+                                        .font(.huninn(size: 16))
                                 }
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
@@ -93,7 +93,7 @@ struct ResultView: View {
                                     Image(systemName: "square.and.arrow.up")
                                         .font(.system(size: 16, weight: .bold))
                                     Text("分享今日運勢卡")
-                                        .font(.system(size: 16, weight: .semibold))
+                                        .font(.huninn(size: 16))
                                 }
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
@@ -112,7 +112,7 @@ struct ResultView: View {
                                     .font(.system(size: 16, weight: .bold))
                                     .rotationEffect(.degrees(isRedrawing ? 360 : 0))
                                 Text("再抽一張喵籤")
-                                    .font(.system(size: 16, weight: .semibold))
+                                    .font(.huninn(size: 16))
                             }
                             .foregroundColor(.catDarkBrown)
                             .frame(maxWidth: .infinity)

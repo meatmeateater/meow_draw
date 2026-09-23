@@ -65,7 +65,7 @@ struct FortuneCardBackView: View {
                         .font(.system(size: 11, weight: .bold))
                         .foregroundColor(.catGold)
                     Text("奉 納 · 心 願 成 就")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.huninn(size: 11))
                         .tracking(3)
                         .foregroundColor(.catSecondaryBrown)
                     Image(systemName: "sparkle")
@@ -122,7 +122,7 @@ struct FortuneCardBackView: View {
                 // 御守主文字
                 VStack(spacing: 8) {
                     Text("喵 運 御 守")
-                        .font(.system(size: 26, weight: .bold, design: .serif))
+                        .font(.huninn(size: 26))
                         .tracking(6)
                         .foregroundColor(.catDarkBrown)
                     
@@ -132,7 +132,7 @@ struct FortuneCardBackView: View {
                             .frame(width: 24, height: 1)
                         
                         Text("CAT FORTUNE")
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .font(.huninn(size: 12))
                             .tracking(4)
                             .foregroundColor(.catCaramel)
                         
@@ -147,11 +147,11 @@ struct FortuneCardBackView: View {
                 // 底部印章感祈福文字
                 VStack(spacing: 4) {
                     Text("諸事吉利 · 喵爪印證")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.huninn(size: 11))
                         .tracking(2)
                         .foregroundColor(.catSecondaryBrown)
                     Text("NO. 8888 · LUCKY AMULET")
-                        .font(.system(size: 9, weight: .medium, design: .monospaced))
+                        .font(.huninn(size: 9))
                         .foregroundColor(.catMutedBrown)
                 }
                 .padding(.bottom, 12)

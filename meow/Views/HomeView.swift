@@ -56,7 +56,7 @@ struct HomeView: View {
                         // 導引副標題
                         VStack(spacing: 8) {
                             Text("摸摸貓爪 · 抽今日專屬喵籤")
-                                .font(.system(size: 20, weight: .bold, design: .rounded))
+                                .font(.huninn(size: 20))
                                 .foregroundColor(.catDarkBrown)
                             
                             HStack(spacing: 6) {
@@ -64,7 +64,7 @@ struct HomeView: View {
                                     .font(.system(size: 12))
                                     .foregroundColor(.catGold)
                                 Text("當前祈願類別：\(selectedCategory.title)")
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(.huninn(size: 13))
                                     .foregroundColor(.catSecondaryBrown)
                                 Image(systemName: "sparkles")
                                     .font(.system(size: 12))
@@ -81,10 +81,10 @@ struct HomeView: View {
                                 .font(.system(size: 11))
                                 .foregroundColor(.catCaramel)
                             Text("已摸摸貓爪 \(tapCount) 次")
-                                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                                .font(.huninn(size: 12))
                                 .foregroundColor(.catSecondaryBrown)
                             Text("（每 5 次有呼嚕彩蛋 🐾）")
-                                .font(.system(size: 11))
+                                .font(.huninn(size: 11))
                                 .foregroundColor(.catMutedBrown)
                         }
                         .padding(.horizontal, 14)
@@ -114,7 +114,7 @@ struct HomeView: View {
                 // MARK: - 散落噴發粒子
                 ForEach(particles) { particle in
                     Text(particle.symbol)
-                        .font(.system(size: 20))
+                        .font(.huninn(size: 20))
                         .scaleEffect(particle.scale)
                         .opacity(particle.opacity)
                         .rotationEffect(.degrees(particle.rotation))
@@ -122,7 +122,7 @@ struct HomeView: View {
                         .allowsHitTesting(false)
                 }
             }
-            .navigationTitle("喵運籤 CatFortune")
+            .navigationTitle("喵運籤")
             .inlineNavigationBarTitle()
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
@@ -134,7 +134,7 @@ struct HomeView: View {
                             Image(systemName: "clock.arrow.circlepath")
                                 .font(.system(size: 14, weight: .semibold))
                             Text("歷史")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.huninn(size: 14))
                         }
                         .foregroundColor(.catCaramel)
                         .padding(.horizontal, 10)
@@ -175,7 +175,7 @@ struct HomeView: View {
                             Image(systemName: category.iconName)
                                 .font(.system(size: 13, weight: .bold))
                             Text(category.title)
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.huninn(size: 13))
                         }
                         .foregroundColor(isSelected ? .white : .catSecondaryBrown)
                         .padding(.horizontal, 14)
@@ -290,7 +290,7 @@ struct HomeView: View {
                     .shadow(color: Color.catCaramel.opacity(0.35), radius: 6, x: 0, y: 4)
                 
                 Text("TAP ME")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .font(.huninn(size: 11))
                     .tracking(2)
                     .foregroundColor(.catCaramel.opacity(0.9))
             }
@@ -342,7 +342,7 @@ struct HomeView: View {
                 Image(systemName: "sparkles")
                     .font(.system(size: 16, weight: .bold))
                 Text("虔心祈籤 · 揭曉今日喵運")
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .font(.huninn(size: 16))
                 Image(systemName: "pawprint.fill")
                     .font(.system(size: 14))
             }
@@ -366,13 +366,13 @@ struct HomeView: View {
     private var easterEggBannerView: some View {
         HStack(spacing: 10) {
             Text("💖")
-                .font(.system(size: 20))
+                .font(.huninn(size: 20))
             VStack(alignment: .leading, spacing: 2) {
                 Text("貓咪發出呼嚕嚕聲音～ (幸運加倍！)")
-                    .font(.system(size: 13, weight: .bold))
+                    .font(.huninn(size: 13))
                     .foregroundColor(.catDarkBrown)
                 Text("喵神的祝福圍繞著你，今日大吉利 🐾")
-                    .font(.system(size: 11))
+                    .font(.huninn(size: 11))
                     .foregroundColor(.catSecondaryBrown)
             }
             Spacer()

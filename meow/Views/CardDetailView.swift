@@ -35,7 +35,7 @@ struct CardDetailView: View {
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(card.isFavorite ? Color(hex: "E64A4A") : .catDarkBrown)
                             Text(card.isFavorite ? "已加入收藏" : "加入收藏")
-                                .font(.system(size: 15, weight: .semibold))
+                                .font(.huninn(size: 15))
                                 .foregroundColor(.catDarkBrown)
                         }
                         .frame(maxWidth: .infinity)
@@ -60,7 +60,7 @@ struct CardDetailView: View {
                                 Image(systemName: "square.and.arrow.up")
                                     .font(.system(size: 16, weight: .bold))
                                 Text("分享這張喵運卡")
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(.huninn(size: 15))
                             }
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
@@ -84,7 +84,7 @@ struct CardDetailView: View {
                                 Image(systemName: "square.and.arrow.up")
                                     .font(.system(size: 16, weight: .bold))
                                 Text("分享這張喵運卡")
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(.huninn(size: 15))
                             }
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)

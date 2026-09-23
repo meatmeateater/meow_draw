@@ -51,7 +51,7 @@ struct HistoryView: View {
                                     Image(systemName: category.iconName)
                                         .font(.system(size: 11, weight: .bold))
                                     Text(category.title)
-                                        .font(.system(size: 12, weight: .medium))
+                                        .font(.huninn(size: 12))
                                 }
                                 .foregroundColor(selectedCategory == category ? .white : .catSecondaryBrown)
                                 .padding(.horizontal, 12)
@@ -124,7 +124,7 @@ struct HistoryView: View {
                         showClearConfirm = true
                     } label: {
                         Text("清空")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.huninn(size: 14))
                             .foregroundColor(.catBadRed)
                     }
                 }
@@ -150,7 +150,7 @@ struct HistoryView: View {
             }
         } label: {
             Text(title)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.huninn(size: 13))
                 .foregroundColor(isSelected ? Color.catDarkBrown : Color.catSecondaryBrown)
                 .frame(maxWidth: .infinity)
                 .frame(height: 36)
@@ -204,12 +204,12 @@ struct HistoryView: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Text(card.title)
-                        .font(.system(size: 15, weight: .bold))
+                        .font(.huninn(size: 15))
                         .foregroundColor(.catDarkBrown)
                         .lineLimit(1)
                     
                     Text(card.rarity.title)
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.huninn(size: 10))
                         .foregroundColor(card.rarity.badgeColor)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
@@ -219,19 +219,19 @@ struct HistoryView: View {
                 
                 HStack(spacing: 8) {
                     Text(card.category.title)
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.huninn(size: 11))
                         .foregroundColor(.catCaramel)
                     
                     Text("•")
                         .foregroundColor(.catMutedBrown)
                     
                     Text(card.timestamp, style: .date)
-                        .font(.system(size: 11))
+                        .font(.huninn(size: 11))
                         .foregroundColor(.catMutedBrown)
                 }
                 
                 Text(card.advice)
-                    .font(.system(size: 11))
+                    .font(.huninn(size: 11))
                     .foregroundColor(.catSecondaryBrown)
                     .lineLimit(1)
             }
@@ -270,11 +270,11 @@ struct HistoryView: View {
             
             VStack(spacing: 6) {
                 Text(showFavoritesOnly ? "尚無收藏的喵籤" : "尚無喵運紀錄")
-                    .font(.system(size: 17, weight: .bold))
+                    .font(.huninn(size: 17))
                     .foregroundColor(.catDarkBrown)
                 
                 Text(showFavoritesOnly ? "點擊籤卡上的愛心，即可將喜愛的喵運收藏於此 💖" : "快去首頁摸摸貓爪，抽取今日專屬喵運吧 🐾")
-                    .font(.system(size: 13))
+                    .font(.huninn(size: 13))
                     .foregroundColor(.catSecondaryBrown)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
