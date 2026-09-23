@@ -12,16 +12,26 @@ struct CardDetailView: View {
     @Environment(\.dismiss) private var dismiss
     
     @State private var renderedShareImage: Image? = nil
+    #if canImport(UIKit)
+    @State private var cardImage: UIImage? = nil
+    #endif
     @State private var showDeleteConfirmation = false
     
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
                 // 正面拍立得卡片展示
+                #if canImport(UIKit)
+                FortuneCardFrontView(card: card, preloadedImage: cardImage, onToggleFavorite: {
+                    onToggleFavorite()
+                })
+                .padding(.top, 16)
+                #else
                 FortuneCardFrontView(card: card, onToggleFavorite: {
                     onToggleFavorite()
                 })
                 .padding(.top, 16)
+                #endif
                 
                 // 功能操作按鈕列
                 VStack(spacing: 12) {
@@ -116,20 +126,34 @@ struct CardDetailView: View {
         .confirmationDialog("確定要刪除這張喵籤嗎？", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
             Button("刪除籤卡", role: .destructive) {
                 HapticManager.medium()
+                FortuneImageManager.shared.deleteImage(fileName: card.localImageFileName)
                 onDelete?()
                 dismiss()
             }
             Button("取消", role: .cancel) {}
         }
         .task {
+            #if canImport(UIKit)
+            if let (image, fileName) = await FortuneImageManager.shared.getOrDownloadImage(for: card) {
+                self.cardImage = image
+                if card.localImageFileName == nil {
+                    card.localImageFileName = fileName
+                }
+            }
+            #endif
             renderCardImage()
         }
     }
     
     @MainActor
     private func renderCardImage() {
+        #if canImport(UIKit)
+        let exportView = FortuneCardFrontView(card: card, preloadedImage: cardImage, onToggleFavorite: nil)
+            .frame(width: 330, height: 520)
+        #else
         let exportView = FortuneCardFrontView(card: card, onToggleFavorite: nil)
             .frame(width: 330, height: 520)
+        #endif
         let renderer = ImageRenderer(content: exportView)
         renderer.scale = 3.0
         #if canImport(UIKit)

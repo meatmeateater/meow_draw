@@ -17,12 +17,11 @@ struct HomeView: View {
     @State private var selectedCategory: FortuneCategory = .all
     @State private var pawScale: CGFloat = 1.0
     @State private var isBreathing = false
-    @State private var isShockwaveActive = false
     @State private var shockwaveScale: CGFloat = 0.8
     @State private var shockwaveOpacity: Double = 0.0
     
-    // 彩蛋與計數
-    @State private var tapCount: Int = 0
+    // 彩蛋與計數（使用 AppStorage 保存累計摸貓爪次數）
+    @AppStorage("cat_paw_tap_count") private var tapCount: Int = 0
     @State private var showEasterEggBanner: Bool = false
     @State private var easterEggTimer: Task<Void, Never>? = nil
     
@@ -44,16 +43,30 @@ struct HomeView: View {
                     .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
+                    // MARK: - 頂部神社形象 Logo
+                    Image("CatShrineLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxHeight: 110)
+                        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .stroke(Color.catCardBorder.opacity(0.6), lineWidth: 1)
+                        )
+                        .shadow(color: Color.catCaramel.opacity(0.12), radius: 8, x: 0, y: 4)
+                        .padding(.top, 6)
+                        .padding(.horizontal, 24)
+                    
                     // MARK: - 頂部類別水平滑動膠囊列
                     categorySelectorBar
-                        .padding(.top, 12)
-                        .padding(.bottom, 16)
+                        .padding(.top, 10)
+                        .padding(.bottom, 14)
                     
                     Spacer()
                     
                     // MARK: - 中央核心貓爪與互動按鈕區
                     VStack(spacing: 32) {
-                        // 導引副標題
+                        // 引導副標題
                         VStack(spacing: 8) {
                             Text("摸摸貓爪 · 抽今日專屬喵籤")
                                 .font(.huninn(size: 20))

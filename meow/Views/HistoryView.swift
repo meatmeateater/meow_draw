@@ -1,5 +1,9 @@
 import SwiftUI
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
 // MARK: - 歷史紀錄與收藏列表
 struct HistoryView: View {
     @Binding var history: [FortuneCard]
@@ -7,7 +11,6 @@ struct HistoryView: View {
     @State private var showFavoritesOnly = false
     @State private var selectedCategory: FortuneCategory = .all
     @State private var showClearConfirm = false
-    @State private var selectedCardId: UUID? = nil
     
     private var favoriteCount: Int {
         history.filter { $0.isFavorite }.count
@@ -96,6 +99,8 @@ struct HistoryView: View {
                                         history[index].isFavorite.toggle()
                                     },
                                     onDelete: {
+                                        let item = history[index]
+                                        FortuneImageManager.shared.deleteImage(fileName: item.localImageFileName)
                                         history.remove(at: index)
                                     }
                                 )
@@ -133,6 +138,7 @@ struct HistoryView: View {
         .confirmationDialog("確定要清空所有喵籤歷史嗎？", isPresented: $showClearConfirm, titleVisibility: .visible) {
             Button("清空全部歷史", role: .destructive) {
                 HapticManager.heavy()
+                FortuneImageManager.shared.clearAllImages()
                 withAnimation {
                     history.removeAll()
                 }
@@ -171,34 +177,14 @@ struct HistoryView: View {
     // MARK: - 卡片列表單列視圖
     private func historyRow(card: FortuneCard, index: Int) -> some View {
         HStack(spacing: 12) {
-            // 縮圖
-            AsyncImage(url: URL(string: card.imageURLString)) { phase in
-                switch phase {
-                case .empty:
+            // 縮圖：優先讀取本機快取照片，若無則降級使用 AsyncImage
+            thumbnailView(for: card)
+                .frame(width: 60, height: 60)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .overlay(
                     RoundedRectangle(cornerRadius: 10)
-                        .fill(Color(hex: "F2EAE0"))
-                        .overlay(ProgressView().scaleEffect(0.7).tint(.catCaramel))
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 60, height: 60)
-                        .clipped()
-                default:
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color(hex: "F2EAE0"))
-                        .overlay(
-                            Image(systemName: "cat.fill")
-                                .foregroundColor(.catCaramel)
-                        )
-                }
-            }
-            .frame(width: 60, height: 60)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(Color.catCardBorder, lineWidth: 1)
-            )
+                        .stroke(Color.catCardBorder, lineWidth: 1)
+                )
             
             // 資訊
             VStack(alignment: .leading, spacing: 4) {
@@ -253,6 +239,48 @@ struct HistoryView: View {
         .padding(.vertical, 4)
     }
     
+    @ViewBuilder
+    private func thumbnailView(for card: FortuneCard) -> some View {
+        #if canImport(UIKit)
+        if let localName = card.localImageFileName,
+           let localImage = FortuneImageManager.shared.loadImage(fileName: localName) {
+            Image(uiImage: localImage)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 60, height: 60)
+                .clipped()
+        } else {
+            networkThumbnail(for: card)
+        }
+        #else
+        networkThumbnail(for: card)
+        #endif
+    }
+    
+    private func networkThumbnail(for card: FortuneCard) -> some View {
+        AsyncImage(url: URL(string: card.imageURLString)) { phase in
+            switch phase {
+            case .empty:
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(hex: "F2EAE0"))
+                    .overlay(ProgressView().scaleEffect(0.7).tint(.catCaramel))
+            case .success(let image):
+                image
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 60, height: 60)
+                    .clipped()
+            default:
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(hex: "F2EAE0"))
+                    .overlay(
+                        Image(systemName: "cat.fill")
+                            .foregroundColor(.catCaramel)
+                    )
+            }
+        }
+    }
+    
     // MARK: - 空狀態視圖
     private var emptyStateView: some View {
         VStack(spacing: 16) {
@@ -288,6 +316,9 @@ struct HistoryView: View {
     private func deleteItems(at offsets: IndexSet) {
         HapticManager.light()
         let itemsToDelete = offsets.map { filteredHistory[$0] }
+        for item in itemsToDelete {
+            FortuneImageManager.shared.deleteImage(fileName: item.localImageFileName)
+        }
         history.removeAll { card in
             itemsToDelete.contains { $0.id == card.id }
         }

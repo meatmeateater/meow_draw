@@ -51,7 +51,7 @@ enum FortuneData {
         ),
         FortuneTemplate(
             title: "招財肉墊本貓",
-            advice: "宜：舉起右手招福納財、對帳單記帳；忌：出門忘帶錢包、錯過限時折扣優惠。",
+            advice: "宜：舉起右手招福納財、對帳單記帳；忌：出門忘帶錢包、錯過限時折價優惠。",
             luckyColor: "金桔焦糖橘",
             category: .wealth,
             rarity: .daikichi
@@ -88,7 +88,7 @@ enum FortuneData {
         ),
         FortuneTemplate(
             title: "微甜偶遇喵",
-            advice: "宜：保持神祕優雅氣質、從容不迫地互動；忌：急於要確定承諾、患得患失。",
+            advice: "宜：保持神秘優雅氣質、從容不迫地互動；忌：急於要確定承諾、患得患失。",
             luckyColor: "乾燥玫瑰紅",
             category: .love,
             rarity: .chukichi
@@ -162,7 +162,7 @@ enum FortuneData {
         )
     ]
     
-    // 生成隨機籤卡
+    // 生成隨機籤卡（依稀有度權重抽取）
     static func randomCard(for category: FortuneCategory = .all) -> FortuneCard {
         let pool: [FortuneTemplate]
         if category == .all {
@@ -172,7 +172,21 @@ enum FortuneData {
             pool = filtered.isEmpty ? templates : filtered
         }
         
-        let template = pool.randomElement() ?? templates[0]
+        // 稀有度加權隨機選取
+        let totalWeight = pool.reduce(0) { $0 + $1.rarity.weight }
+        let randomValue = Int.random(in: 0..<max(1, totalWeight))
+        var currentSum = 0
+        var selectedTemplate = pool.first ?? templates[0]
+        
+        for template in pool {
+            currentSum += template.rarity.weight
+            if randomValue < currentSum {
+                selectedTemplate = template
+                break
+            }
+        }
+        
+        let template = selectedTemplate
         
         // 使用 cataas API 搭配 UUID 參數避免重複快取
         let uniqueQuery = UUID().uuidString
@@ -185,6 +199,7 @@ enum FortuneData {
             category: template.category,
             rarity: template.rarity,
             imageURLString: imageURL,
+            localImageFileName: nil,
             isFavorite: false,
             timestamp: Date()
         )

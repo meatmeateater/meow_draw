@@ -1,8 +1,15 @@
 import SwiftUI
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
 // MARK: - 拍立得照片卡風格正面
 struct FortuneCardFrontView: View {
     let card: FortuneCard
+    #if canImport(UIKit)
+    var preloadedImage: UIImage? = nil
+    #endif
     var onToggleFavorite: (() -> Void)? = nil
     
     var body: some View {
@@ -10,47 +17,13 @@ struct FortuneCardFrontView: View {
             // MARK: - 上半部：拍立得照片區域
             ZStack(alignment: .topTrailing) {
                 // 貓咪照片
-                AsyncImage(url: URL(string: card.imageURLString)) { phase in
-                    switch phase {
-                    case .empty:
-                        ZStack {
-                            Color(hex: "F6EFE6")
-                            VStack(spacing: 8) {
-                                ProgressView()
-                                    .tint(.catCaramel)
-                                Text("喵咪照片下載中...")
-                                    .font(.huninn(size: 11))
-                                    .foregroundColor(.catSecondaryBrown)
-                            }
-                        }
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 298, height: 210)
-                            .clipped()
-                    case .failure:
-                        ZStack {
-                            Color(hex: "F5ECE1")
-                            VStack(spacing: 8) {
-                                Image(systemName: "cat.circle.fill")
-                                    .font(.system(size: 44))
-                                    .foregroundColor(.catCaramel.opacity(0.8))
-                                Text("喵星訊號接收中 🐾")
-                                    .font(.huninn(size: 12))
-                                    .foregroundColor(.catSecondaryBrown)
-                            }
-                        }
-                    @unknown default:
-                        Color(hex: "F5ECE1")
-                    }
-                }
-                .frame(width: 298, height: 210)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.black.opacity(0.04), lineWidth: 1)
-                )
+                catPhotoView
+                    .frame(width: 298, height: 210)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(Color.black.opacity(0.04), lineWidth: 1)
+                    )
                 
                 // 右上角收藏愛心按鈕
                 Button {
@@ -141,9 +114,9 @@ struct FortuneCardFrontView: View {
                 
                 // 今日宜／忌 語錄區塊
                 let advice = card.parsedAdvice
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 8) {
                     if !advice.good.isEmpty {
-                        HStack(alignment: .top, spacing: 6) {
+                        HStack(alignment: .center, spacing: 8) {
                             Text("宜")
                                 .font(.huninn(size: 10))
                                 .foregroundColor(.catGoodGreen)
@@ -160,7 +133,7 @@ struct FortuneCardFrontView: View {
                     }
                     
                     if !advice.bad.isEmpty {
-                        HStack(alignment: .top, spacing: 6) {
+                        HStack(alignment: .center, spacing: 8) {
                             Text("忌")
                                 .font(.huninn(size: 10))
                                 .foregroundColor(.catBadRed)
@@ -213,6 +186,69 @@ struct FortuneCardFrontView: View {
         )
         .shadow(color: Color.black.opacity(0.08), radius: 16, x: 0, y: 8)
         .shadow(color: Color.catCaramel.opacity(0.06), radius: 4, x: 0, y: 2)
+    }
+    
+    // MARK: - 貓咪照片顯示視圖（依序檢查預載圖、本機儲存檔、最後使用網路載入）
+    @ViewBuilder
+    private var catPhotoView: some View {
+        #if canImport(UIKit)
+        if let preloaded = preloadedImage {
+            Image(uiImage: preloaded)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 298, height: 210)
+                .clipped()
+        } else if let localName = card.localImageFileName,
+                  let localImage = FortuneImageManager.shared.loadImage(fileName: localName) {
+            Image(uiImage: localImage)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 298, height: 210)
+                .clipped()
+        } else {
+            networkAsyncImage
+        }
+        #else
+        networkAsyncImage
+        #endif
+    }
+    
+    private var networkAsyncImage: some View {
+        AsyncImage(url: URL(string: card.imageURLString)) { phase in
+            switch phase {
+            case .empty:
+                ZStack {
+                    Color(hex: "F6EFE6")
+                    VStack(spacing: 8) {
+                        ProgressView()
+                            .tint(.catCaramel)
+                        Text("喵咪照片下載中...")
+                            .font(.huninn(size: 11))
+                            .foregroundColor(.catSecondaryBrown)
+                    }
+                }
+            case .success(let image):
+                image
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 298, height: 210)
+                    .clipped()
+            case .failure:
+                ZStack {
+                    Color(hex: "F5ECE1")
+                    VStack(spacing: 8) {
+                        Image(systemName: "cat.circle.fill")
+                            .font(.system(size: 44))
+                            .foregroundColor(.catCaramel.opacity(0.8))
+                        Text("喵星訊號接收中 🐾")
+                            .font(.huninn(size: 12))
+                            .foregroundColor(.catSecondaryBrown)
+                    }
+                }
+            @unknown default:
+                Color(hex: "F5ECE1")
+            }
+        }
     }
 }
 

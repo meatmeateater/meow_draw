@@ -13,6 +13,9 @@ struct ResultView: View {
     @State private var isFlipped = false
     @State private var isRedrawing = false
     @State private var renderedShareImage: Image? = nil
+    #if canImport(UIKit)
+    @State private var cardImage: UIImage? = nil
+    #endif
     
     init(initialCategory: FortuneCategory, history: Binding<[FortuneCard]>) {
         self.initialCategory = initialCategory
@@ -42,11 +45,19 @@ struct ResultView: View {
                         .opacity(isFlipped ? 0 : 1)
                         .rotation3DEffect(.degrees(isFlipped ? 180 : 0), axis: (x: 0, y: 1, z: 0))
                     
+                    #if canImport(UIKit)
+                    FortuneCardFrontView(card: currentCard, preloadedImage: cardImage, onToggleFavorite: {
+                        toggleFavorite()
+                    })
+                    .opacity(isFlipped ? 1 : 0)
+                    .rotation3DEffect(.degrees(isFlipped ? 0 : -180), axis: (x: 0, y: 1, z: 0))
+                    #else
                     FortuneCardFrontView(card: currentCard, onToggleFavorite: {
                         toggleFavorite()
                     })
                     .opacity(isFlipped ? 1 : 0)
                     .rotation3DEffect(.degrees(isFlipped ? 0 : -180), axis: (x: 0, y: 1, z: 0))
+                    #endif
                 }
                 .animation(.spring(response: 0.7, dampingFraction: 0.75), value: isFlipped)
                 .onTapGesture {
@@ -141,7 +152,11 @@ struct ResultView: View {
         .task {
             // 將初次抽到的籤卡加入歷史清單
             appendCurrentCardToHistory()
-            renderCardImage()
+            
+            // 同步啟動貓咪圖片載入與本機快取
+            Task {
+                await loadCardImage()
+            }
             
             // 進入頁面延遲 0.35 秒自動翻牌
             try? await Task.sleep(nanoseconds: 350_000_000)
@@ -150,6 +165,23 @@ struct ResultView: View {
             }
             HapticManager.success()
         }
+    }
+    
+    // MARK: - 圖片載入邏輯
+    @MainActor
+    private func loadCardImage() async {
+        #if canImport(UIKit)
+        if let (image, fileName) = await FortuneImageManager.shared.getOrDownloadImage(for: currentCard) {
+            self.cardImage = image
+            self.currentCard.localImageFileName = fileName
+            self.updateCurrentCardInHistory()
+            self.renderCardImage()
+        } else {
+            self.renderCardImage()
+        }
+        #else
+        self.renderCardImage()
+        #endif
     }
     
     // MARK: - 重新抽籤邏輯
@@ -170,8 +202,16 @@ struct ResultView: View {
             // 2. 重新抽取新卡片並記錄
             let newCard = FortuneData.randomCard(for: initialCategory)
             currentCard = newCard
+            #if canImport(UIKit)
+            cardImage = nil
+            #endif
+            renderedShareImage = nil
             appendCurrentCardToHistory()
-            renderCardImage()
+            
+            // 啟動圖片下載與快取
+            Task {
+                await loadCardImage()
+            }
             
             try? await Task.sleep(nanoseconds: 200_000_000)
             
@@ -187,9 +227,7 @@ struct ResultView: View {
     // MARK: - 收藏切換
     private func toggleFavorite() {
         currentCard.isFavorite.toggle()
-        if let idx = history.firstIndex(where: { $0.id == currentCard.id }) {
-            history[idx].isFavorite = currentCard.isFavorite
-        }
+        updateCurrentCardInHistory()
     }
     
     // MARK: - 加入歷史紀錄
@@ -199,11 +237,23 @@ struct ResultView: View {
         }
     }
     
+    // MARK: - 更新歷史紀錄中當前卡片資訊（如本地檔名或收藏狀態）
+    private func updateCurrentCardInHistory() {
+        if let idx = history.firstIndex(where: { $0.id == currentCard.id }) {
+            history[idx] = currentCard
+        }
+    }
+    
     // MARK: - 卡片截圖渲染
     @MainActor
     private func renderCardImage() {
+        #if canImport(UIKit)
+        let exportView = FortuneCardFrontView(card: currentCard, preloadedImage: cardImage, onToggleFavorite: nil)
+            .frame(width: 330, height: 520)
+        #else
         let exportView = FortuneCardFrontView(card: currentCard, onToggleFavorite: nil)
             .frame(width: 330, height: 520)
+        #endif
         let renderer = ImageRenderer(content: exportView)
         renderer.scale = 3.0
         #if canImport(UIKit)

@@ -42,6 +42,20 @@ enum FortuneRarity: String, CaseIterable, Identifiable, Codable, Hashable {
     
     var title: String { rawValue }
     
+    /// 抽取權重比例（總和 100：SSR 8%, 大吉 22%, 中吉 35%, 小吉 35%）
+    var weight: Int {
+        switch self {
+        case .ssr:
+            return 8
+        case .daikichi:
+            return 22
+        case .chukichi:
+            return 35
+        case .shokichi:
+            return 35
+        }
+    }
+    
     var colorName: String {
         switch self {
         case .ssr:
@@ -91,6 +105,7 @@ struct FortuneCard: Identifiable, Hashable, Codable {
     var category: FortuneCategory
     var rarity: FortuneRarity
     var imageURLString: String
+    var localImageFileName: String? = nil
     var isFavorite: Bool = false
     var timestamp: Date = Date()
     
