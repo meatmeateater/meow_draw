@@ -8,6 +8,7 @@ struct ContentView: View {
     
     var body: some View {
         HomeView(history: $history)
+            .font(.huninn(size: 15))
             .onAppear {
                 loadHistory()
             }
