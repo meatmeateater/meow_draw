@@ -63,7 +63,7 @@ final class FortuneImageManager {
     }
     
     /// 取得現有本機快取圖片，若無則自網路下載並儲存至本機
-    func getOrDownloadImage(for card: FortuneCard) async -> (image: UIImage, fileName: String)? {
+    func getOrDownloadImage(for card: FortuneCard) async -> (image: UIImage, fileName: String?)? {
         // 1. 若已經有記錄檔名且檔案存在，直接使用本機圖片
         if let localName = card.localImageFileName, let existingImage = loadImage(fileName: localName) {
             return (existingImage, localName)
@@ -78,11 +78,9 @@ final class FortuneImageManager {
                 return nil
             }
             
-            // 3. 下載完成後寫入本機硬碟持久化保存
-            if let fileName = saveImage(data: data, for: card.id) {
-                return (image, fileName)
-            }
-            return (image, "\(card.id.uuidString).jpg")
+            // 3. 下載完成後寫入本機硬碟持久化保存（若寫入失敗則回傳 fileName 為 nil）
+            let savedFileName = saveImage(data: data, for: card.id)
+            return (image, savedFileName)
         } catch {
             print("Failed to download image from \(card.imageURLString): \(error)")
             return nil
