@@ -16,6 +16,9 @@ struct CardDetailView: View {
     @State private var cardImage: UIImage? = nil
     #endif
     @State private var showDeleteConfirmation = false
+    @State private var isImageLoading = false
+    @State private var isImageLoadFailed = false
+    @State private var imageLoadTask: Task<Void, Never>? = nil
     
     var body: some View {
         ScrollView {
@@ -85,6 +88,28 @@ struct CardDetailView: View {
                             .clipShape(Capsule())
                             .shadow(color: Color.catCaramel.opacity(0.3), radius: 8, x: 0, y: 4)
                         }
+                    } else if isImageLoadFailed {
+                        Button {
+                            retryImageLoad()
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "arrow.clockwise")
+                                    .font(.system(size: 15, weight: .bold))
+                                Text("圖片載入失敗・點擊重試")
+                                    .font(.huninn(size: 15))
+                            }
+                            .foregroundColor(.catCaramel)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                            .background(Color.catCardBackground)
+                            .clipShape(Capsule())
+                            .overlay(
+                                Capsule()
+                                    .strokeBorder(Color.catCaramel.opacity(0.6), lineWidth: 1.5)
+                            )
+                            .shadow(color: Color.catCaramel.opacity(0.15), radius: 6, x: 0, y: 3)
+                        }
+                        .buttonStyle(.plain)
                     } else {
                         Button {
                             // 圖片渲染中，按鈕暫時停用
@@ -138,30 +163,60 @@ struct CardDetailView: View {
             Button("取消", role: .cancel) {}
         }
         .task {
-            #if canImport(UIKit)
-            if let (image, fileName) = await FortuneImageManager.shared.getOrDownloadImage(for: card) {
-                self.cardImage = image
-                if card.localImageFileName == nil {
-                    card.localImageFileName = fileName
-                }
+            imageLoadTask?.cancel()
+            imageLoadTask = Task {
+                await loadImage()
             }
-            #endif
-            renderCardImage()
+        }
+        .onDisappear {
+            imageLoadTask?.cancel()
+        }
+    }
+    
+    @MainActor
+    private func loadImage() async {
+        isImageLoading = true
+        isImageLoadFailed = false
+        #if canImport(UIKit)
+        if let (image, fileName) = await FortuneImageManager.shared.getOrDownloadImage(for: card) {
+            guard !Task.isCancelled else { return }
+            self.cardImage = image
+            if card.localImageFileName == nil {
+                card.localImageFileName = fileName
+            }
+            self.isImageLoading = false
+            self.isImageLoadFailed = false
+            self.renderCardImage()
+        } else {
+            guard !Task.isCancelled else { return }
+            self.isImageLoading = false
+            self.isImageLoadFailed = true
+        }
+        #else
+        guard !Task.isCancelled else { return }
+        self.isImageLoading = false
+        self.isImageLoadFailed = true
+        #endif
+    }
+    
+    private func retryImageLoad() {
+        guard !isImageLoading else { return }
+        HapticManager.light()
+        imageLoadTask?.cancel()
+        imageLoadTask = Task {
+            await loadImage()
         }
     }
     
     @MainActor
     private func renderCardImage() {
         #if canImport(UIKit)
+        // 只有拿到真正的 UIImage 才允許產生分享圖片
+        guard let cardImage = cardImage else { return }
         let exportView = FortuneCardFrontView(card: card, preloadedImage: cardImage, onToggleFavorite: nil)
             .frame(width: 330, height: 520)
-        #else
-        let exportView = FortuneCardFrontView(card: card, onToggleFavorite: nil)
-            .frame(width: 330, height: 520)
-        #endif
         let renderer = ImageRenderer(content: exportView)
         renderer.scale = 3.0
-        #if canImport(UIKit)
         if let uiImage = renderer.uiImage {
             self.renderedShareImage = Image(uiImage: uiImage)
         }

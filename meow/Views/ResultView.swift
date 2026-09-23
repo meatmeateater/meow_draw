@@ -16,7 +16,10 @@ struct ResultView: View {
     #if canImport(UIKit)
     @State private var cardImage: UIImage? = nil
     #endif
+    @State private var isImageLoading = false
+    @State private var isImageLoadFailed = false
     @State private var imageLoadTask: Task<Void, Never>? = nil
+    @State private var redrawTask: Task<Void, Never>? = nil
     
     init(initialCategory: FortuneCategory, history: Binding<[FortuneCard]>) {
         self.initialCategory = initialCategory
@@ -97,6 +100,28 @@ struct ResultView: View {
                                 .clipShape(Capsule())
                                 .shadow(color: Color.catCaramel.opacity(0.35), radius: 8, x: 0, y: 4)
                             }
+                        } else if isImageLoadFailed {
+                            Button {
+                                retryImageLoad()
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "arrow.clockwise")
+                                        .font(.system(size: 15, weight: .bold))
+                                    Text("圖片載入失敗・點擊重試")
+                                        .font(.huninn(size: 16))
+                                }
+                                .foregroundColor(.catCaramel)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 52)
+                                .background(Color.catCardBackground)
+                                .clipShape(Capsule())
+                                .overlay(
+                                    Capsule()
+                                        .strokeBorder(Color.catCaramel.opacity(0.6), lineWidth: 1.5)
+                                )
+                                .shadow(color: Color.catCaramel.opacity(0.12), radius: 6, x: 0, y: 3)
+                            }
+                            .buttonStyle(.plain)
                         } else {
                             Button {
                                 // 圖片渲染中，按鈕暫時停用
@@ -163,12 +188,19 @@ struct ResultView: View {
             
             // 同步啟動貓咪圖片載入與本機快取
             let targetCard = currentCard
+            imageLoadTask?.cancel()
             imageLoadTask = Task {
                 await loadCardImage(for: targetCard)
             }
             
-            // 進入頁面延遲 0.35 秒自動翻牌
-            try? await Task.sleep(nanoseconds: 350_000_000)
+            // 進入頁面延遲 0.35 秒自動翻牌（若被取消則退出，不吞掉 CancellationError）
+            do {
+                try await Task.sleep(nanoseconds: 350_000_000)
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
+            
             withAnimation(.spring(response: 0.7, dampingFraction: 0.75)) {
                 isFlipped = true
             }
@@ -176,6 +208,7 @@ struct ResultView: View {
         }
         .onDisappear {
             imageLoadTask?.cancel()
+            redrawTask?.cancel()
         }
     }
     
@@ -183,22 +216,40 @@ struct ResultView: View {
     @MainActor
     private func loadCardImage(for targetCard: FortuneCard) async {
         let targetId = targetCard.id
+        isImageLoading = true
+        isImageLoadFailed = false
+        
         #if canImport(UIKit)
         if let (image, fileName) = await FortuneImageManager.shared.getOrDownloadImage(for: targetCard) {
-            // 下載完成後先確認目前卡片仍是同一張，避免連續抽籤時覆蓋新卡片的資料
+            // 下載完成後先確認未取消且目前卡片仍是同一張，避免連續抽籤時覆蓋新卡片的資料
             guard !Task.isCancelled, currentCard.id == targetId else { return }
             self.cardImage = image
             self.currentCard.localImageFileName = fileName
+            self.isImageLoading = false
+            self.isImageLoadFailed = false
             self.updateCurrentCardInHistory()
             self.renderCardImage()
         } else {
             guard !Task.isCancelled, currentCard.id == targetId else { return }
-            self.renderCardImage()
+            self.isImageLoading = false
+            self.isImageLoadFailed = true
+            // 下載失敗時不呼叫 renderCardImage()，只有拿到真正的 UIImage 才允許產生分享圖片
         }
         #else
         guard !Task.isCancelled, currentCard.id == targetId else { return }
-        self.renderCardImage()
+        self.isImageLoading = false
+        self.isImageLoadFailed = true
         #endif
+    }
+    
+    // MARK: - 重試圖片載入
+    private func retryImageLoad() {
+        guard !isImageLoading else { return }
+        HapticManager.light()
+        imageLoadTask?.cancel()
+        imageLoadTask = Task {
+            await loadCardImage(for: currentCard)
+        }
     }
     
     // MARK: - 重新抽籤邏輯
@@ -212,9 +263,15 @@ struct ResultView: View {
             isFlipped = false
         }
         
-        Task {
+        redrawTask?.cancel()
+        redrawTask = Task {
             // 等待翻回背面動畫
-            try? await Task.sleep(nanoseconds: 400_000_000)
+            do {
+                try await Task.sleep(nanoseconds: 400_000_000)
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
             
             // 2. 重新抽取新卡片並記錄
             let newCard = FortuneData.randomCard(for: initialCategory)
@@ -223,6 +280,7 @@ struct ResultView: View {
             cardImage = nil
             #endif
             renderedShareImage = nil
+            isImageLoadFailed = false
             appendCurrentCardToHistory()
             
             // 啟動圖片下載與快取（取消前一次未完成的載入任務）
@@ -231,7 +289,12 @@ struct ResultView: View {
                 await loadCardImage(for: newCard)
             }
             
-            try? await Task.sleep(nanoseconds: 200_000_000)
+            do {
+                try await Task.sleep(nanoseconds: 200_000_000)
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
             
             // 3. 再次翻開卡片
             withAnimation(.spring(response: 0.7, dampingFraction: 0.75)) {
@@ -266,15 +329,12 @@ struct ResultView: View {
     @MainActor
     private func renderCardImage() {
         #if canImport(UIKit)
+        // 只有拿到真正的 UIImage 才允許產生分享圖片
+        guard let cardImage = cardImage else { return }
         let exportView = FortuneCardFrontView(card: currentCard, preloadedImage: cardImage, onToggleFavorite: nil)
             .frame(width: 330, height: 520)
-        #else
-        let exportView = FortuneCardFrontView(card: currentCard, onToggleFavorite: nil)
-            .frame(width: 330, height: 520)
-        #endif
         let renderer = ImageRenderer(content: exportView)
         renderer.scale = 3.0
-        #if canImport(UIKit)
         if let uiImage = renderer.uiImage {
             self.renderedShareImage = Image(uiImage: uiImage)
         }
