@@ -20,7 +20,7 @@ struct HomeView: View {
     @State private var shockwaveScale: CGFloat = 0.8
     @State private var shockwaveOpacity: Double = 0.0
     
-    // 彩蛋與計數（使用 AppStorage 保存累計摸貓爪次數）
+    // 彩蛋與計數（使用 AppStorage 保存累積摸貓爪次數）
     @AppStorage("cat_paw_tap_count") private var tapCount: Int = 0
     @State private var showEasterEggBanner: Bool = false
     @State private var easterEggTimer: Task<Void, Never>? = nil
@@ -96,7 +96,7 @@ struct HomeView: View {
                             Text("已摸摸貓爪 \(tapCount) 次")
                                 .font(.huninn(size: 12))
                                 .foregroundColor(.catSecondaryBrown)
-                            Text("（每 5 次有呼嚕彩蛋 🐾）")
+                            Text("（每 5 次有喵叫彩蛋 🐾）")
                                 .font(.huninn(size: 11))
                                 .foregroundColor(.catMutedBrown)
                         }
@@ -172,7 +172,7 @@ struct HomeView: View {
             .onDisappear {
                 easterEggTimer?.cancel()
                 navigationTask?.cancel()
-                SoundManager.shared.stopPurr()
+                SoundManager.shared.stopMeow()
             }
         }
     }
@@ -380,13 +380,13 @@ struct HomeView: View {
         .buttonStyle(.plain)
     }
     
-    // MARK: - 呼嚕嚕彩蛋橫幅
+    // MARK: - 貓叫彩蛋橫幅
     private var easterEggBannerView: some View {
         HStack(spacing: 10) {
-            Text("💖")
+            Text("🐾")
                 .font(.huninn(size: 20))
             VStack(alignment: .leading, spacing: 2) {
-                Text("貓咪發出呼嚕嚕聲音～ (幸運加倍！)")
+                Text("貓咪發出可愛的喵叫聲～ (幸運加倍！)")
                     .font(.huninn(size: 13))
                     .foregroundColor(.catDarkBrown)
                 Text("喵神的祝福圍繞著你，今日大吉利 🐾")
@@ -457,10 +457,10 @@ struct HomeView: View {
         }
     }
     
-    // MARK: - 呼嚕嚕彩蛋觸發
+    // MARK: - 貓叫彩蛋觸發
     private func triggerEasterEgg() {
         HapticManager.success()
-        SoundManager.shared.playPurr()
+        SoundManager.shared.playMeow()
         withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
             showEasterEggBanner = true
         }
@@ -477,10 +477,10 @@ struct HomeView: View {
             particles.append(p)
         }
         
-        // 定時自動收回彩蛋提示
+        // 定時自動收回彩蛋提示（音效長度約 2 秒，提示維持 3 秒）
         easterEggTimer?.cancel()
         easterEggTimer = Task {
-            try? await Task.sleep(nanoseconds: 3_500_000_000)
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
             guard !Task.isCancelled else { return }
             await MainActor.run {
                 withAnimation(.easeOut(duration: 0.35)) {

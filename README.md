@@ -10,14 +10,14 @@
 - 🐾 **多感官互動體驗**：
   - 主頁呼吸光暈與水波漣漪擴散特效。
   - 摸摸貓爪即時按壓回饋與隨機散落噴發粒子（🐾、✨、💖、🌸、⭐、🐟）。
-  - **摸爪彩蛋與音效**：每累計摸爪 5 次，觸發真實貓咪發出呼嚕嚕音效（`SoundManager` + `AVAudioPlayer`）、浮動橫幅提示（Toast）、額外噴發金色星星雨與成功震動回饋！
-  - 細緻的觸覺震動體驗（採用 `UIImpactFeedbackGenerator`、`UINotificationFeedbackGenerator` 與 `UISelectionFeedbackGenerator`，並支援 macOS `NSHapticFeedbackManager`）。
+  - **摸爪彩蛋與音效**：每累計摸爪 5 次，觸發可愛真實小貓咪喵叫聲（背景非同步 `AVAudioSession` + `AVAudioPlayer`，無阻塞零卡頓）、浮動橫幅提示（Toast）、額外噴發金色星星雨與成功震動回饋！
+  - 細緻的觸覺震動體驗（iOS 主要採用 `UIImpactFeedbackGenerator`、`UINotificationFeedbackGenerator` 與 `UISelectionFeedbackGenerator`，部分支援 macOS `NSHapticFeedbackManager`）。
 - 🎴 **擬真 3D 拍立得抽籤卡**：
   - 流暢的 3D 翻牌動畫與金箔背紋御守設計。
   - 多維度運勢資訊：4 種稀有度等級（SSR 特大吉、大吉喵、中吉喵、小吉喵）、5 大祈願專屬分類、幸運色、防偽印記爪印編號認證與「今日宜／忌」幽默貓咪語錄。
 - 📸 **真實貓咪照片與本機持久化**：
   - 整合即時貓咪圖庫（Cataas API），每張籤卡均擁有一張專屬的喵咪拍立得相片。
-  - **雙層式快取架構**：記憶體 `NSCache` 高速快取 + App 沙盒文件目錄（`.documentDirectory/FortuneImages`）持久化儲存，已抽取的卡片在離線環境下依然可隨時瀏覽。
+  - **雙層式快取架構（UIKit / iOS 核心）**：記憶體 `NSCache` 高速快取 + App 沙盒文件目錄（`.documentDirectory/FortuneImages`）持久化儲存，已抽取的卡片在離線環境下依然可隨時瀏覽。
   - **安全非同步機制**：精確追蹤 Task 與卡片 ID，防範快速連續抽籤導致圖片與資料錯配，並杜絕重複網路下載。
 - 📤 **高清圖文卡片分享**：
   - 運用 SwiftUI `ImageRenderer` 動態合成 3x 高解析度拍立得分享卡。
@@ -32,14 +32,15 @@
 
 | 項目 | 技術規格 |
 | :--- | :--- |
-| **開發平台** | iOS 17.0+ / macOS 14.0+ (Designed for iPad / Mac Catalyst 相容) |
-| **開發語言** | Swift 5.9+ / Swift Concurrency (async/await, Task, @MainActor) |
+| **主要平台** | iOS (iPhone / iPad)；部分 UI 程式包含 macOS 條件編譯相容處理 |
+| **目標版本** | iOS Deployment Target：27.0（`IPHONEOS_DEPLOYMENT_TARGET = 27.0`） |
+| **開發語言** | Swift 5 Language Mode（`SWIFT_VERSION = 5.0`），採用 Swift Concurrency (async/await, Task, @MainActor, actor) |
 | **UI 框架** | SwiftUI |
-| **音訊管理** | `AVAudioPlayer` + `AVAudioSession` (`.ambient` 模式，支援背景音樂混合播放) |
-| **圖片管理** | `URLSession` + `NSCache` + 本機沙盒檔案系統（`.documentDirectory`） |
-| **截圖渲染** | `ImageRenderer` (支援 UIKit / AppKit 條件編譯相容) |
+| **音訊管理** | `AVAudioPlayer` + 非同步背景 `AVAudioSession`（`.ambient` 模式，支援背景音樂混合且無 UI Hang Risk） |
+| **圖片管理** | `URLSession` + `NSCache` + 本機沙盒檔案系統（`.documentDirectory`，主要針對 iOS UIKit 實作完整磁碟與記憶體快取） |
+| **截圖渲染** | `ImageRenderer`（主要針對 iOS UIKit 渲染，部分視圖包含 AppKit 條件編譯相容） |
 | **資料持久化** | `UserDefaults` (JSON 編解碼) + Document 沙盒磁碟儲存 (`FortuneImages/`) |
-| **觸覺回饋** | `UIFeedbackGenerator` (Impact / Notification / Selection) + `NSHapticFeedbackManager` |
+| **觸覺回饋** | `UIFeedbackGenerator` (Impact / Notification / Selection) + macOS 分支相容 `NSHapticFeedbackManager` |
 | **自訂字型** | jf-openhuninn-2.1 (jf 粉圓字體) |
 
 ---
@@ -50,18 +51,19 @@
 meow/
 ├── MyApp.swift                      # 應用程式入口點
 ├── ContentView.swift                # 主容器、歷史紀錄持久化管理
-├── cat_purr.wav                     # 貓咪呼嚕嚕真實音效資源
+├── cat_meow.wav                     # 貓咪喵叫真實音效資源（標準 48kHz 16-bit PCM）
+├── cat_meow.mp3                     # 原始 MP3 音效備用資源
 ├── jf-openhuninn-2.1.ttf            # 自訂日系粉圓字型
 ├── Models/
 │   ├── FortuneModels.swift          # 籤卡核心模型 (FortuneCard, FortuneCategory, FortuneRarity)
 │   └── FortuneData.swift            # 籤詩資料庫與隨機抽籤邏輯 (含稀有度權重分配)
 ├── Utilities/
 │   ├── Theme.swift                  # 主題配色、自訂字型 (huninn) 擴充
-│   ├── SoundManager.swift           # 音訊播放單例 (貓咪呼嚕音效管理)
-│   ├── HapticManager.swift          # 系統觸覺回饋封裝 (跨平台支援)
-│   └── FortuneImageManager.swift    # 圖片雙層快取與沙盒儲存單例
+│   ├── SoundManager.swift           # 音效播放單例 (背景非同步 AVAudioSession 配置，避免阻塞 UI)
+│   ├── HapticManager.swift          # 系統觸覺回饋封裝 (跨平台相容處理)
+│   └── FortuneImageManager.swift    # 圖片雙層快取與沙盒儲存單例 (iOS UIKit 專用架構)
 └── Views/
-    ├── HomeView.swift               # 首頁：類別選擇、動態貓爪微互動與彩蛋 Toast / 呼嚕音效
+    ├── HomeView.swift               # 首頁：類別選擇、動態貓爪微互動與彩蛋 Toast / 喵叫音效
     ├── ResultView.swift             # 抽籤結果：3D 翻牌、圖片下載、高解析渲染與分享
     ├── CardDetailView.swift         # 歷史籤卡詳情：卡片檢視、載入重試、刪除確認
     ├── HistoryView.swift            # 歷史紀錄列表：分類過濾、收藏切換、滑動刪除
@@ -75,9 +77,10 @@ meow/
 ## 🚀 開始使用
 
 ### 需求條件
-- Xcode 15.0 以上
-- iOS 17.0 以上模擬器或實體裝置
-- macOS Sonoma (14.0) 以上
+- 使用與目前專案相容之 Xcode 版本
+- iOS Deployment Target：27.0
+- Swift 5 Language Mode (`SWIFT_VERSION = 5.0`)
+- 主要開發與測試目標：iOS (iPhone / iPad)
 
 ### 安裝與執行
 1. 複製專案至本機：
@@ -89,7 +92,7 @@ meow/
    ```bash
    open meow.xcodeproj
    ```
-3. 選擇欲運行的目標裝置（例如 `iPhone 16 Pro`）。
+3. 選擇欲運行的目標裝置（例如 `iPhone 16 Pro` 模擬器或相容實體裝置）。
 4. 按下 `Cmd + R` 即可編譯並執行。
 
 ---
@@ -119,4 +122,5 @@ meow/
 ## 📄 授權條款 (License)
 
 本專案採用 [MIT License](LICENSE) 授權。
-所附之自訂字體 **jf-openhuninn**（粉圓字體）遵循由 justfont 發布之 [SIL Open Font License 1.1](https://github.com/justfont/open-huninn-font) 條款。
+- 所附之自訂字體 **jf-openhuninn**（粉圓字體）遵循由 justfont 發布之 [SIL Open Font License 1.1](https://github.com/justfont/open-huninn-font) 條款。
+- 所附之貓咪喵叫音訊資源（[`cat_meow.wav`](meow/cat_meow.wav) / [`cat_meow.mp3`](meow/cat_meow.mp3)）採樣自可愛小貓咪喵叫音訊（dragon-studio-cute-cat-meow），並經無損轉碼為低延遲標準 PCM WAV 格式。
