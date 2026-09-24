@@ -169,6 +169,11 @@ struct HomeView: View {
                     isBreathing = true
                 }
             }
+            .onDisappear {
+                easterEggTimer?.cancel()
+                navigationTask?.cancel()
+                SoundManager.shared.stopPurr()
+            }
         }
     }
     
@@ -455,6 +460,7 @@ struct HomeView: View {
     // MARK: - 呼嚕嚕彩蛋觸發
     private func triggerEasterEgg() {
         HapticManager.success()
+        SoundManager.shared.playPurr()
         withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
             showEasterEggBanner = true
         }
