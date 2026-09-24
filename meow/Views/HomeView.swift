@@ -172,7 +172,6 @@ struct HomeView: View {
             .onDisappear {
                 easterEggTimer?.cancel()
                 navigationTask?.cancel()
-                SoundManager.shared.stopMeow()
             }
         }
     }

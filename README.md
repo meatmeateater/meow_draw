@@ -10,7 +10,7 @@
 - 🐾 **多感官互動體驗**：
   - 主頁呼吸光暈與水波漣漪擴散特效。
   - 摸摸貓爪即時按壓回饋與隨機散落噴發粒子（🐾、✨、💖、🌸、⭐、🐟）。
-  - **摸爪彩蛋與音效**：每累計摸爪 5 次，觸發可愛真實小貓咪喵叫聲（背景非同步 `AVAudioSession` + `AVAudioPlayer`，無阻塞零卡頓）、浮動橫幅提示（Toast）、額外噴發金色星星雨與成功震動回饋！
+  - **摸爪彩蛋與音效**：每累計摸爪 5 次，觸發可愛真實小貓咪喵叫聲（將音訊 Session 配置與播放工作移至專用背景串行佇列，降低 AVAudioSession 阻塞主執行緒的風險）、浮動橫幅提示（Toast）、額外噴發金色星星雨與成功震動回饋！
   - 細緻的觸覺震動體驗（iOS 主要採用 `UIImpactFeedbackGenerator`、`UINotificationFeedbackGenerator` 與 `UISelectionFeedbackGenerator`，部分支援 macOS `NSHapticFeedbackManager`）。
 - 🎴 **擬真 3D 拍立得抽籤卡**：
   - 流暢的 3D 翻牌動畫與金箔背紋御守設計。
@@ -34,9 +34,9 @@
 | :--- | :--- |
 | **主要平台** | iOS (iPhone / iPad)；部分 UI 程式包含 macOS 條件編譯相容處理 |
 | **目標版本** | iOS Deployment Target：27.0（`IPHONEOS_DEPLOYMENT_TARGET = 27.0`） |
-| **開發語言** | Swift 5 Language Mode（`SWIFT_VERSION = 5.0`），採用 Swift Concurrency (async/await, Task, @MainActor, actor) |
+| **開發語言** | Swift 5 Language Mode（`SWIFT_VERSION = 5.0`），採用 Swift Concurrency (async/await, Task, @MainActor) + DispatchQueue |
 | **UI 框架** | SwiftUI |
-| **音訊管理** | `AVAudioPlayer` + 非同步背景 `AVAudioSession`（`.ambient` 模式，支援背景音樂混合且無 UI Hang Risk） |
+| **音訊管理** | `AVAudioPlayer` + 非同步背景 `AVAudioSession`（`.ambient` 模式，支援背景音樂混合，將配置與播放移至專用背景串行佇列以降低主執行緒阻塞風險） |
 | **圖片管理** | `URLSession` + `NSCache` + 本機沙盒檔案系統（`.documentDirectory`，主要針對 iOS UIKit 實作完整磁碟與記憶體快取） |
 | **截圖渲染** | `ImageRenderer`（主要針對 iOS UIKit 渲染，部分視圖包含 AppKit 條件編譯相容） |
 | **資料持久化** | `UserDefaults` (JSON 編解碼) + Document 沙盒磁碟儲存 (`FortuneImages/`) |
@@ -59,7 +59,7 @@ meow/
 │   └── FortuneData.swift            # 籤詩資料庫與隨機抽籤邏輯 (含稀有度權重分配)
 ├── Utilities/
 │   ├── Theme.swift                  # 主題配色、自訂字型 (huninn) 擴充
-│   ├── SoundManager.swift           # 音效播放單例 (背景非同步 AVAudioSession 配置，避免阻塞 UI)
+│   ├── SoundManager.swift           # 音效播放單例 (背景串行佇列管理 AVAudioSession 與播放，降低阻塞風險)
 │   ├── HapticManager.swift          # 系統觸覺回饋封裝 (跨平台相容處理)
 │   └── FortuneImageManager.swift    # 圖片雙層快取與沙盒儲存單例 (iOS UIKit 專用架構)
 └── Views/
@@ -121,6 +121,14 @@ meow/
 
 ## 📄 授權條款 (License)
 
-本專案採用 [MIT License](LICENSE) 授權。
-- 所附之自訂字體 **jf-openhuninn**（粉圓字體）遵循由 justfont 發布之 [SIL Open Font License 1.1](https://github.com/justfont/open-huninn-font) 條款。
-- 所附之貓咪喵叫音訊資源（[`cat_meow.wav`](meow/cat_meow.wav) / [`cat_meow.mp3`](meow/cat_meow.mp3)）採樣自可愛小貓咪喵叫音訊（dragon-studio-cute-cat-meow），並經無損轉碼為低延遲標準 PCM WAV 格式。
+本專案程式碼採用 [MIT License](LICENSE) 授權。所包含之第三方資源授權如下：
+
+- **自訂字體（jf-openhuninn）**：
+  - 名稱：jf 粉圓字體 2.1
+  - 來源：[justfont / open-huninn-font](https://github.com/justfont/open-huninn-font)
+  - 授權：[SIL Open Font License 1.1](https://github.com/justfont/open-huninn-font)
+- **音效資源（cat_meow.wav / cat_meow.mp3）**：
+  - 名稱：Cute Cat Meow (`dragon-studio-cute-cat-meow-472372`)
+  - 創作者：Dragon-Studio
+  - 來源：[Pixabay Sound Effects](https://pixabay.com/zh/sound-effects/)
+  - 授權：[Pixabay Content License](https://pixabay.com/service/license-summary/)（可免費商業與非商業使用，允許於專案內嵌入散布，無須署名但特此標明以示感謝）
